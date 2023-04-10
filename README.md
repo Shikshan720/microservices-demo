@@ -1,208 +1,97 @@
-<p align="center">
-<img src="src/frontend/static/icons/Hipster_HeroLogoMaroon.svg" width="300" alt="Online Boutique" />
-</p>
+##Installation of ISTIO: Using Minikube
+#Pre-requisites Minikube installed and configured.
+
+1. download the istio tar file from the following link:
+
+curl https://github.com/istio/istio/releases/download/1.17.1/istio-1.17.1-linux-arm64.tar.gz
+
+or wget https://github.com/istio/istio/releases/download/1.17.1/istio-1.17.1-linux-arm64.tar.gz
+
+download the Tar file and extract it tar -xvzf istio-1.17.1-linux-arm64.tar.gz [or if you are using ui nevigate to the folder and double click to extra>
 
 
-![Continuous Integration](https://github.com/GoogleCloudPlatform/microservices-demo/workflows/Continuous%20Integration%20-%20Main/Release/badge.svg)
+2. istioctl path determination:
 
-**Online Boutique** is a cloud-first microservices demo application.
-Online Boutique consists of an 11-tier microservices application. The application is a
-web-based e-commerce app where users can browse items,
-add them to the cart, and purchase them.
+ - istioctl would be located in /bin folder in the downloaded folder.
 
-**Google uses this application to demonstrate use of technologies like
-Kubernetes/GKE, Istio, Stackdriver, and gRPC**. This application
-works on any Kubernetes cluster, as well as Google
-Kubernetes Engine. It’s **easy to deploy with little to no configuration**.
+ - a environmental variable for that file has to be created.
 
-If you’re using this demo, please **★Star** this repository to show your interest!
+ - go to the /bin folder and check the pwd and note it down.
 
-> 👓**Note to Googlers (Google employees):** Please fill out the form at
-> [go/microservices-demo](http://go/microservices-demo) if you are using this
-> application.
+ - create env ie: export PATH=$PATH:(pwd-content)/bin.
 
-## Screenshots
+ - check whether istio is accessable or not user istioctl command to get the details.
 
-| Home Page                                                                                                         | Checkout Screen                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [![Screenshot of store homepage](./docs/img/online-boutique-frontend-1.png)](./docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](./docs/img/online-boutique-frontend-2.png)](./docs/img/online-boutique-frontend-2.png) |
+[Note!-The Path environment created is specfic for that terminal session only if the session closes the path would be lost.
+it should be added to the .bashrc file to make it permant]
 
-## Quickstart (GKE)
 
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2FGoogleCloudPlatform%2Fmicroservices-demo&shellonly=true&cloudshell_image=gcr.io/ds-artifacts-cloudshell/deploystack_custom_image)
+3. Executing it in minikube cluster:
 
-1. **[Create a Google Cloud Platform project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)** or use an existing project. Set the `PROJECT_ID` environment variable and ensure the Google Kubernetes Engine and Cloud Operations APIs are enabled.
+ - minikube start --cpus 3 --memory 8192 [Note!- your hardware limits and execute accordingly]
 
-```
-PROJECT_ID="<your-project-id>"
-gcloud services enable container.googleapis.com --project ${PROJECT_ID}
-```
+ - kubectl get ns [get namespaces]
 
-2. **Clone this repository.**
+ - istioctl install
 
-```
-git clone https://github.com/GoogleCloudPlatform/microservices-demo.git
-cd microservices-demo
-```
+   - Would install all the required services for istio under namespace istio-system
 
-3. **Create a GKE cluster.**
+   - kubectl get all -n istio-system
 
-- GKE autopilot mode (see [Autopilot
-overview](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview)
-to learn more):
+   - kubectl get pods -n istio-system [two pods mainly istiod & istio-ingress-gateway would be up and running]
 
-```
-REGION=us-central1
-gcloud container clusters create-auto onlineboutique \
-    --project=${PROJECT_ID} --region=${REGION}
-```
 
-- GKE Standard mode:
+4. Default namespace labelling to trigger istio envoy injection:
 
-```
-ZONE=us-central1-b
-gcloud container clusters create onlineboutique \
-    --project=${PROJECT_ID} --zone=${ZONE} \
-    --machine-type=e2-standard-2 --num-nodes=4
-```
+  - By default all the services would be deployed in the default namespaces if we do not specify any specific namespaces.
 
-4. **Deploy the sample app to the cluster.**
+  - istio would be triggered if the namespaces labeled as istio-injection=enabled, then any services / resources created would
 
-```
-kubectl apply -f ./release/kubernetes-manifests.yaml
-```
+    trigger istio automatically and a side-car container would be created along with the main services.
 
-5. **Wait for the Pods to be ready.**
+  - kubectl get ns default --show-labels [to see the labels of default namespace]
 
-```
-kubectl get pods
-```
+  - kubectl label namespace default istio-injection=enabled
 
-After a few minutes, you should see:
+  - check the label kubectl get ns default --show-labels
 
-```
-NAME                                     READY   STATUS    RESTARTS   AGE
-adservice-76bdd69666-ckc5j               1/1     Running   0          2m58s
-cartservice-66d497c6b7-dp5jr             1/1     Running   0          2m59s
-checkoutservice-666c784bd6-4jd22         1/1     Running   0          3m1s
-currencyservice-5d5d496984-4jmd7         1/1     Running   0          2m59s
-emailservice-667457d9d6-75jcq            1/1     Running   0          3m2s
-frontend-6b8d69b9fb-wjqdg                1/1     Running   0          3m1s
-loadgenerator-665b5cd444-gwqdq           1/1     Running   0          3m
-paymentservice-68596d6dd6-bf6bv          1/1     Running   0          3m
-productcatalogservice-557d474574-888kr   1/1     Running   0          3m
-recommendationservice-69c56b74d4-7z8r5   1/1     Running   0          3m1s
-redis-cart-5f59546cdd-5jnqf              1/1     Running   0          2m58s
-shippingservice-6ccc89f8fd-v686r         1/1     Running   0          2m58s
-```
 
-7. **Access the web frontend in a browser** using the frontend's `EXTERNAL_IP`.
+5. Deploying Micro-Services to the cluster to be monitored:
 
-```
-kubectl get service frontend-external | awk '{print $4}'
-```
+  - Deploy Micro-services which would be monitored using istio. for this example use google microservices.
 
-*Example output - do not copy*
+  - giturl: https://github.com/AbhiGT997/microservices-demo.git
 
-```
-EXTERNAL-IP
-<your-ip>
-```
+  - cd to release folder and deploy the manifest file there.
 
-**Note**- you may see `<pending>` while GCP provisions the load balancer. If this happens, wait a few minutes and re-run the command.
+    - kubectl apply -f kubernetes-manifests.yaml
 
-8. [Optional] **Clean up**:
+    - all the services would be deployed automatically.
 
-```
-gcloud container clusters delete onlineboutique \
-    --project=${PROJECT_ID} --zone=${ZONE}
-```
+    - kubectl get all -o wide.
 
-## Use Terraform to provision a GKE cluster and deploy Online Boutique
+  - Hence two pods would be created for every microservices, ie istio would inject a envoy side-car container to the pods.
+  
+  
+ 6. Data vizulization in Istio using addons:
 
-The [`/terraform` folder](terraform) contains instructions for using [Terraform](https://www.terraform.io/intro) to replicate the steps from [**Quickstart (GKE)**](#quickstart-gke) above.
+  - For data vizulizations istio supports addons for vizulizations tools like prometheus, grafana, kiali, jaeger etc.
 
-## Other deployment variations
+  - navigate to downloaded istio folder ie: istio-1.17.1
 
-- **Istio**: [See these instructions.](docs/service-mesh.md)
-- **Anthos Service Mesh**: [See these instructions](/docs/service-mesh.md)
-- **non-GKE clusters (Minikube, Kind)**: see the [Development Guide](/docs/development-guide.md)
+  - there would be samples/addons folder containing all the required manifest file for the data vizulization tools mentioned.
 
-## Deploy Online Boutique variations with Kustomize
+  - deploy by using:
 
-The [`/kustomize` folder](kustomize) contains instructions for customizing the deployment of Online Boutique with different variations such as:
-* integrating with [Google Cloud Operations](kustomize/components/google-cloud-operations/)
-* replacing the in-cluster Redis cache with [Google Cloud Memorystore (Redis)](kustomize/components/memorystore) or [Google Cloud Spanner](kustomize/components/spanner)
-* etc.
+    kubectl apply -f istio-1.17.1/samples/addons [would deploy all the services accordingly]
 
-## Architecture
+  - kubectl get svc -n istio-system [would list out all the services deployed]
 
-**Online Boutique** is composed of 11 microservices written in different
-languages that talk to each other over gRPC.
 
-[![Architecture of
-microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-diagram.png)
+7. Accessing the services using port-forwarding:
 
-Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
+  - kubectl port-forward svc/<service-name> -n istio-system <specified port> [Note!- specified port would be specific for that services]
 
-| Service                                              | Language      | Description                                                                                                                       |
-| ---------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [frontend](./src/frontend)                           | Go            | Exposes an HTTP server to serve the website. Does not require signup/login and generates session IDs for all users automatically. |
-| [cartservice](./src/cartservice)                     | C#            | Stores the items in the user's shopping cart in Redis and retrieves it.                                                           |
-| [productcatalogservice](./src/productcatalogservice) | Go            | Provides the list of products from a JSON file and ability to search products and get individual products.                        |
-| [currencyservice](./src/currencyservice)             | Node.js       | Converts one money amount to another currency. Uses real values fetched from European Central Bank. It's the highest QPS service. |
-| [paymentservice](./src/paymentservice)               | Node.js       | Charges the given credit card info (mock) with the given amount and returns a transaction ID.                                     |
-| [shippingservice](./src/shippingservice)             | Go            | Gives shipping cost estimates based on the shopping cart. Ships items to the given address (mock)                                 |
-| [emailservice](./src/emailservice)                   | Python        | Sends users an order confirmation email (mock).                                                                                   |
-| [checkoutservice](./src/checkoutservice)             | Go            | Retrieves user cart, prepares order and orchestrates the payment, shipping and the email notification.                            |
-| [recommendationservice](./src/recommendationservice) | Python        | Recommends other products based on what's given in the cart.                                                                      |
-| [adservice](./src/adservice)                         | Java          | Provides text ads based on given context words.                                                                                   |
-| [loadgenerator](./src/loadgenerator)                 | Python/Locust | Continuously sends requests imitating realistic user shopping flows to the frontend.                                              |
+  - for eg: kubectl port-forward svc/grafana -n istio-system 3000
 
-## Features
-
-- **[Kubernetes](https://kubernetes.io)/[GKE](https://cloud.google.com/kubernetes-engine/):**
-  The app is designed to run on Kubernetes (both locally on "Docker for
-  Desktop", as well as on the cloud with GKE).
-- **[gRPC](https://grpc.io):** Microservices use a high volume of gRPC calls to
-  communicate to each other.
-- **[Istio](https://istio.io):** Application works on Istio service mesh.
-- **[Cloud Operations (Stackdriver)](https://cloud.google.com/products/operations):** Many services
-  are instrumented with **Profiling** and **Tracing**. In
-  addition to these, using Istio enables features like Request/Response
-  **Metrics** and **Context Graph** out of the box. When it is running out of
-  Google Cloud, this code path remains inactive.
-- **[Skaffold](https://skaffold.dev):** Application
-  is deployed to Kubernetes with a single command using Skaffold.
-- **Synthetic Load Generation:** The application demo comes with a background
-  job that creates realistic usage patterns on the website using
-  [Locust](https://locust.io/) load generator.
-
-## Local Development
-
-If you would like to contribute features or fixes to this app, see the [Development Guide](/docs/development-guide.md) on how to build this demo locally.
-
-## Demos featuring Online Boutique
-
-- [Use Helm to simplify the deployment of Online Boutique, with a Service Mesh, GitOps, and more!](https://medium.com/p/246119e46d53)
-- [How to reduce microservices complexity with Apigee and Anthos Service Mesh](https://cloud.google.com/blog/products/application-modernization/api-management-and-service-mesh-go-together)
-- [gRPC health probes with Kubernetes 1.24+](https://medium.com/p/b5bd26253a4c)
-- [Use Google Cloud Spanner with the Online Boutique sample](https://medium.com/p/f7248e077339)
-- [Seamlessly encrypt traffic from any apps in your Mesh to Memorystore (redis)](https://medium.com/google-cloud/64b71969318d)
-- [Strengthen your app's security with Anthos Service Mesh and Anthos Config Management](https://cloud.google.com/service-mesh/docs/strengthen-app-security)
-- [From edge to mesh: Exposing service mesh applications through GKE Ingress](https://cloud.google.com/architecture/exposing-service-mesh-apps-through-gke-ingress)
-- [Take the first step toward SRE with Cloud Operations Sandbox](https://cloud.google.com/blog/products/operations/on-the-road-to-sre-with-cloud-operations-sandbox)
-- [Deploying the Online Boutique sample application on Anthos Service Mesh](https://cloud.google.com/service-mesh/docs/onlineboutique-install-kpt)
-- [Anthos Service Mesh Workshop: Lab Guide](https://codelabs.developers.google.com/codelabs/anthos-service-mesh-workshop)
-- [KubeCon EU 2019 - Reinventing Networking: A Deep Dive into Istio's Multicluster Gateways - Steve Dake, Independent](https://youtu.be/-t2BfT59zJA?t=982)
-- Google Cloud Next'18 SF
-  - [Day 1 Keynote](https://youtu.be/vJ9OaAqfxo4?t=2416) showing GKE On-Prem
-  - [Day 3 Keynote](https://youtu.be/JQPOPV_VH5w?t=815) showing Stackdriver
-    APM (Tracing, Code Search, Profiler, Google Cloud Build)
-  - [Introduction to Service Management with Istio](https://www.youtube.com/watch?v=wCJrdKdD6UM&feature=youtu.be&t=586)
-- [Google Cloud Next'18 London – Keynote](https://youtu.be/nIq2pkNcfEI?t=3071)
-  showing Stackdriver Incident Response Management
-
----
-
-This is not an official Google project.
+  - then a localport address would pop up using that address the services can be accessed.
