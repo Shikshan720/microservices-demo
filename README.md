@@ -1,4 +1,4 @@
-##Installation of ISTIO: Using Minikube
+##Installation of ISTIO: Using the Minikube
 #Pre-requisites Minikube installed and configured.
 
 1. download the istio tar file from the following link:
